@@ -56,6 +56,6 @@ func printCertChain(certs []*x509.Certificate) {
 func addKV(t *simpletable.Table, key string, value string) {
 	t.Body.Cells = append(t.Body.Cells, []*simpletable.Cell{
 		{Text: key},
-		{Text: style.Render(value)},
+		{Text: valueStyle.Render(value)},
 	})
 }
