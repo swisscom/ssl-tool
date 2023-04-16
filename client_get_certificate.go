@@ -1,6 +1,8 @@
 package main
 
 import (
+	"errors"
+	"fmt"
 	ssl_tool "github.com/swisscom/ssl-tool/pkg"
 	"net/url"
 )
@@ -21,7 +23,9 @@ func doGetCertificateCmd() {
 	}
 
 	certs, err := ssl_tool.GetCerts(u.String())
-	if err != nil {
+	if errors.Is(err, ssl_tool.ErrInvalidCert) {
+		fmt.Println("! Invalid Certificate")
+	} else if err != nil {
 		logger.Fatalf("unable to get certs: %v", err)
 	}
 	printCertChain(certs)
