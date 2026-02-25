@@ -3,21 +3,23 @@ package ssl_tool
 import (
 	"crypto/tls"
 	"crypto/x509"
+	"errors"
 	"fmt"
 	"net/http"
-	"net/url"
+	"time"
 )
 
-var ErrInvalidCert = fmt.Errorf("invalid certificate")
+var ErrInvalidCert = errors.New("invalid certificate")
 
 // GetCerts returns the full chain of certificates for the provided url
 func GetCerts(u string) ([]*x509.Certificate, error) {
 	req, err := http.NewRequest(http.MethodHead, u, nil)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to create request: %w", err)
 	}
 
 	client := http.Client{
+		Timeout: 10 * time.Second,
 		CheckRedirect: func(req *http.Request, via []*http.Request) error {
 			return http.ErrUseLastResponse
 		},
@@ -25,16 +27,16 @@ func GetCerts(u string) ([]*x509.Certificate, error) {
 
 	res, err := client.Do(req)
 	if err != nil {
-		switch err.(type) {
-		case *url.Error:
-			urlErrInner := err.(*url.Error).Err
-			switch urlErrInner.(type) {
-			case *tls.CertificateVerificationError:
-				return urlErrInner.(*tls.CertificateVerificationError).UnverifiedCertificates, ErrInvalidCert
-			}
+		var certVerifyErr *tls.CertificateVerificationError
+		if errors.As(err, &certVerifyErr) {
+			return certVerifyErr.UnverifiedCertificates, ErrInvalidCert
 		}
-		return nil, err
-	} else {
-		return res.TLS.PeerCertificates, nil
+		return nil, fmt.Errorf("failed to perform request: %w", err)
 	}
+
+	if res.TLS == nil {
+		return nil, fmt.Errorf("no TLS connection state available for %s", u)
+	}
+
+	return res.TLS.PeerCertificates, nil
 }

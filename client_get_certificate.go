@@ -3,17 +3,24 @@ package main
 import (
 	"errors"
 	"fmt"
-	ssl_tool "github.com/swisscom/ssl-tool/pkg"
 	"net/url"
+
+	ssl_tool "github.com/swisscom/ssl-tool/pkg"
+	"github.com/spf13/cobra"
 )
 
-type GetCertificateCmd struct {
-	Url string `arg:"positional,required"`
+var getCertificateCmd = &cobra.Command{
+	Use:   "get-certificate <url>",
+	Short: "Retrieve SSL/TLS certificates from a remote host",
+	Args:  cobra.ExactArgs(1),
+	RunE: func(cmd *cobra.Command, args []string) error {
+		doGetCertificateCmd(args[0])
+		return nil
+	},
 }
 
-func doGetCertificateCmd() {
-	cmd := args.Client.GetCertificate
-	u, err := url.Parse(cmd.Url)
+func doGetCertificateCmd(rawURL string) {
+	u, err := url.Parse(rawURL)
 	if err != nil {
 		logger.Fatalf("unable to parse URL: %v", err)
 	}
@@ -24,7 +31,7 @@ func doGetCertificateCmd() {
 
 	certs, err := ssl_tool.GetCerts(u.String())
 	if errors.Is(err, ssl_tool.ErrInvalidCert) {
-		fmt.Println("! Invalid Certificate")
+		fmt.Println(invalidCertStyle.Render("! Invalid Certificate"))
 	} else if err != nil {
 		logger.Fatalf("unable to get certs: %v", err)
 	}

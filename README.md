@@ -1,89 +1,47 @@
 # ssl-tool
 
-A tool to deal with SSL things.
+A CLI tool to inspect and retrieve SSL/TLS certificates.
 
+![ssl-tool screenshot](docs/screenshot.png)
+
+## Installation
+
+```sh
+go install github.com/swisscom/ssl-tool@latest
+```
 
 ## Usage
 
-### `ssl-tool`
-
-```plain
-Usage: ssl-tool [--log-level LOG-LEVEL] <command> [<args>]
-
-Options:
-  --log-level LOG-LEVEL, -l LOG-LEVEL [default: warning]
-  --help, -h             display this help and exit
+```
+ssl-tool [command] [-l log-level]
 
 Commands:
-  cert
-  client
+  cert    Certificate operations
+  client  Client operations
+
+Flags:
+  -l, --log-level string   log level (debug, info, warning, error) (default "warning")
+  -v, --version            version for ssl-tool
+  -h, --help               help for ssl-tool
 ```
 
-- `--log-level` can be one of `debug`, `warning`, `error`
+### `ssl-tool client get-certificate <url>`
 
-### `ssl-tool cert`
+Fetch and display the certificate chain from a live HTTPS endpoint.
 
-```plain
-Usage: ssl-tool cert <command> [<args>]
-
-Global options:
-  --log-level LOG-LEVEL, -l LOG-LEVEL [default: warning]
-  --help, -h             display this help and exit
-
-Commands:
-  parse
+```sh
+ssl-tool client get-certificate https://expired.badssl.com
 ```
 
-#### `ssl-tool cert parse`
+- Displays the leaf certificate details (subject, issuer, DNS names, validity, key info)
+- Displays the full certificate chain with subject, issuer, and color-coded expiry
+- Shows a warning banner for invalid/untrusted certificates
+- Expiry dates are color-coded: **green** (valid), **yellow** (< 30 days), **red** (expired)
 
-Used to parse a certificate (chain).
+### `ssl-tool cert parse <certfile>`
 
-```plain
-$ ssl-tool cert parse cert.pem
-Certificate
- NAME                     VALUE                                          
- Subject                  CN=*.google.com                                
- Issuer                   CN=GTS CA 1C3,O=Google Trust Services LLC,C=US 
- DNS Names                *.google.com                                   
-                          *.appengine.google.com                         
-                          *.bdn.dev                                      
-                          *.origin-test.bdn.dev                          
-                          ...                            
- Not Before               2023-03-06 09:16:21                            
- Not After                2023-05-29 10:16:20                            
- Public Key Algorithm     ECDSA                                          
- Public Key Size (bits)   256                                            
+Parse and display a local PEM certificate file (single cert or chain).
 
-Certificate Chain
- Subject        Issuer             
- *.google.com   GTS CA 1C3         
- GTS CA 1C3     GTS Root R1        
- GTS Root R1    GlobalSign Root CA 
-```
-
-#### `ssl-tool client get-certificate URL`
-
-Used to parse a certificate (chain).
-
-```
-$ ssl-tool client get-certificate https://google.com
-Certificate
- NAME                     VALUE                                          
- Subject                  CN=*.google.com                                
- Issuer                   CN=GTS CA 1C3,O=Google Trust Services LLC,C=US 
- DNS Names                *.google.com                                   
-                          *.appengine.google.com                         
-                          *.bdn.dev                                      
-                          *.origin-test.bdn.dev                          
-                          ...                            
- Not Before               2023-03-06 09:16:21                            
- Not After                2023-05-29 10:16:20                            
- Public Key Algorithm     ECDSA                                          
- Public Key Size (bits)   256                                            
-
-Certificate Chain
- Subject        Issuer             
- *.google.com   GTS CA 1C3         
- GTS CA 1C3     GTS Root R1        
- GTS Root R1    GlobalSign Root CA 
+```sh
+ssl-tool cert parse cert.pem
 ```

@@ -1,38 +1,45 @@
 package main
 
 import (
-	"github.com/alexflint/go-arg"
-	"github.com/sirupsen/logrus"
+	"fmt"
+	"os"
 	"strings"
+
+	"github.com/sirupsen/logrus"
+	"github.com/spf13/cobra"
 )
 
 var logger = logrus.New()
 
-var args struct {
-	Certificate *CertificateCmd `arg:"subcommand:cert"`
-	Client      *ClientCmd      `arg:"subcommand:client"`
-	LogLevel    string          `arg:"-l,--log-level" default:"warning"`
+var logLevel string
+
+var rootCmd = &cobra.Command{
+	Use:     "ssl-tool",
+	Short:   "ssl-tool inspects and retrieves SSL/TLS certificates.",
+	Version: "1.0.0",
+	PersistentPreRun: func(cmd *cobra.Command, args []string) {
+		switch strings.ToLower(logLevel) {
+		case "debug":
+			logger.SetLevel(logrus.DebugLevel)
+		case "info":
+			logger.SetLevel(logrus.InfoLevel)
+		case "warning":
+			logger.SetLevel(logrus.WarnLevel)
+		case "error":
+			logger.SetLevel(logrus.ErrorLevel)
+		}
+	},
 }
 
-const specifySubcommand = "please specify a subcommand"
-
 func main() {
-	arg.MustParse(&args)
-
-	switch strings.ToLower(args.LogLevel) {
-	case "warning":
-		logger.SetLevel(logrus.WarnLevel)
-	case "debug":
-		logger.SetLevel(logrus.DebugLevel)
-	case "error":
-		logger.SetLevel(logrus.ErrorLevel)
+	if err := rootCmd.Execute(); err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
 	}
+}
 
-	if args.Certificate != nil {
-		doCertificateCmd(args.Certificate)
-	} else if args.Client != nil {
-		doClientCmd()
-	} else {
-		logger.Errorf(specifySubcommand)
-	}
+func init() {
+	rootCmd.PersistentFlags().StringVarP(&logLevel, "log-level", "l", "warning", "log level (debug, info, warning, error)")
+	rootCmd.AddCommand(certCmd)
+	rootCmd.AddCommand(clientCmd)
 }

@@ -3,40 +3,30 @@ package main
 import (
 	"crypto/x509"
 	"encoding/pem"
-	"github.com/alexeyco/simpletable"
-	"io"
 	"os"
+
+	"github.com/alexeyco/simpletable"
+	"github.com/spf13/cobra"
 )
 
-type ParseCmd struct {
-	CertFile string `arg:"positional" description:"A certificate in .pem format"`
+var parseCmd = &cobra.Command{
+	Use:   "parse [certfile]",
+	Short: "Parse and display a PEM certificate file",
+	Args:  cobra.MaximumNArgs(1),
+	RunE: func(cmd *cobra.Command, args []string) error {
+		if len(args) == 0 {
+			logger.Errorf("please specify a certificate file")
+			return nil
+		}
+		doParseCertificate(args[0])
+		return nil
+	},
 }
 
-func doParseCertificate(cmd *ParseCmd) {
-	if cmd == nil {
-		logger.Fatalf("cmd cannot be nil")
-	}
-
-	if cmd.CertFile == "" {
-		logger.Errorf("please specify a certificate file")
-		return
-	}
-
-	f, err := os.Open(cmd.CertFile)
+func doParseCertificate(certFile string) {
+	fileBytes, err := os.ReadFile(certFile)
 	if err != nil {
-		logger.Errorf("unable to open certificate file: %v", err)
-		return
-	}
-
-	var fileBytes []byte
-	fileBytes, err = io.ReadAll(f)
-	if err != nil {
-		logger.Errorf("unable to read file: %v", err)
-		return
-	}
-	err = f.Close()
-	if err != nil {
-		logger.Errorf("unable to close file: %v", err)
+		logger.Errorf("unable to read certificate file: %v", err)
 		return
 	}
 
@@ -52,14 +42,11 @@ func showCert(fileBytes []byte) {
 		if pemBlock == nil {
 			break
 		}
-		if rest == nil {
-			break
-		}
-		input = rest
 		if pemBlock.Type != "CERTIFICATE" {
 			logger.Errorf("invalid pem block type: %s", pemBlock.Type)
 			return
 		}
+		input = rest
 
 		cert, err := x509.ParseCertificate(pemBlock.Bytes)
 		if err != nil {
@@ -75,12 +62,12 @@ func showCert(fileBytes []byte) {
 
 func printCertificate(cert *x509.Certificate) []*simpletable.Cell {
 	if cert == nil {
-		logger.Errorf("cert cannot be nil!")
-		return nil
+		logger.Fatalf("cert cannot be nil!")
 	}
 
 	return []*simpletable.Cell{
 		{Align: simpletable.AlignLeft, Text: cert.Subject.CommonName},
 		{Align: simpletable.AlignLeft, Text: cert.Issuer.CommonName},
+		{Align: simpletable.AlignLeft, Text: expiryStyle(cert.NotAfter)(formatDateWithExpiry(cert.NotAfter))},
 	}
 }

@@ -12,8 +12,8 @@ func getKeySize(cert *x509.Certificate) (int, error) {
 	switch pub := cert.PublicKey.(type) {
 	case *rsa.PublicKey:
 		return pub.Size() * 8, nil
-	case *ed25519.PublicKey:
-		return len(*pub) * 8, nil
+	case ed25519.PublicKey:
+		return len(pub) * 8, nil
 	case *ecdsa.PublicKey:
 		return pub.Curve.Params().BitSize, nil
 	default:

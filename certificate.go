@@ -1,18 +1,15 @@
 package main
 
-type CertificateCmd struct {
-	Parse *ParseCmd `arg:"subcommand:parse"`
+import "github.com/spf13/cobra"
+
+var certCmd = &cobra.Command{
+	Use:   "cert",
+	Short: "Certificate operations",
+	RunE: func(cmd *cobra.Command, args []string) error {
+		return cmd.Help()
+	},
 }
 
-func doCertificateCmd(cmd *CertificateCmd) {
-	if cmd == nil {
-		logger.Fatalf("cmd cannot be nil")
-	}
-
-	if cmd.Parse != nil {
-		doParseCertificate(cmd.Parse)
-		return
-	}
-
-	logger.Errorf(specifySubcommand)
+func init() {
+	certCmd.AddCommand(parseCmd)
 }

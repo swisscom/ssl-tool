@@ -9,6 +9,7 @@ func certTable() *simpletable.Table {
 		Cells: []*simpletable.Cell{
 			{Align: simpletable.AlignLeft, Text: boldStyle.Render("Subject")},
 			{Align: simpletable.AlignLeft, Text: boldStyle.Render("Issuer")},
+			{Align: simpletable.AlignLeft, Text: boldStyle.Render("Valid Until")},
 		},
 	}
 	return t
